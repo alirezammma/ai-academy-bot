@@ -22,7 +22,7 @@ ADMIN_ID = os.environ.get("ADMIN_ID")
 PRIVATE_CHANNEL_ID = os.environ.get("PRIVATE_CHANNEL_ID")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-3-flash-preview")
+model = genai.GenerativeModel("gemini-3.1-flash-lite")
 
 SYSTEM_PROMPT = """تو یه دستیار هوش مصنوعی فارسی‌زبان هستی برای کانال AI Academy.
 همیشه به فارسی جواب بده مگه کاربر انگلیسی بنویسه.
