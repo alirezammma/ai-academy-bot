@@ -1,5 +1,6 @@
 import os
 import re
+import html
 import logging
 import google.generativeai as genai
 
@@ -128,7 +129,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{SYSTEM_PROMPT}\n\nاین متن رو خلاصه کن:\n{user_message}",
 
         "prompt":
-            f"{SYSTEM_PROMPT}\n\nیه پرامپت حرفه‌ای بساز برای:\n{user_message}",
+            f"""
+{SYSTEM_PROMPT}
+
+یه پرامپت حرفه‌ای بساز برای:
+
+{user_message}
+
+فرمت پاسخ:
+
+توضیح کوتاه
+
+PROMPT_START
+Only the final prompt here
+PROMPT_END
+
+بعدش نکات کاربردی رو بنویس.
+"""
     }
 
     try:
@@ -144,26 +161,63 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         result = response.text
 
+        result = re.sub(
+            r"###\s*(.*)",
+            r"<b>\1</b>",
+            result
+        )
+
+        result = re.sub(
+            r"##\s*(.*)",
+            r"<b>\1</b>",
+            result
+        )
+
+        result = re.sub(
+            r"\*\*(.*?)\*\*",
+            r"<b>\1</b>",
+            result
+        )
+
         if mode == "prompt":
 
-            safe_result = (
-                result.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
+            match = re.search(
+                r"PROMPT_START(.*?)PROMPT_END",
+                result,
+                re.DOTALL
             )
 
-            await update.message.reply_text(
-                f"<pre>{safe_result}</pre>",
-                parse_mode=ParseMode.HTML
-            )
+            if match:
+
+                prompt_text = match.group(1).strip()
+
+                normal_text = re.sub(
+                    r"PROMPT_START.*?PROMPT_END",
+                    "",
+                    result,
+                    flags=re.DOTALL
+                ).strip()
+
+                if normal_text:
+
+                    await update.message.reply_text(
+                        normal_text,
+                        parse_mode=ParseMode.HTML
+                    )
+
+                await update.message.reply_text(
+                    f"<pre>{html.escape(prompt_text)}</pre>",
+                    parse_mode=ParseMode.HTML
+                )
+
+            else:
+
+                await update.message.reply_text(
+                    result,
+                    parse_mode=ParseMode.HTML
+                )
 
         else:
-
-            result = re.sub(
-                r"\*\*(.*?)\*\*",
-                r"<b>\1</b>",
-                result
-            )
 
             await update.message.reply_text(
                 result,
