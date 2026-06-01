@@ -1,8 +1,16 @@
 import os
 import logging
 import google.generativeai as genai
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
+
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    ContextTypes,
+)
+from telegram.constants import ParseMode
 
 logging.basicConfig(level=logging.INFO)
 
@@ -11,71 +19,175 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 ADMIN_ID = os.environ.get("ADMIN_ID")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-3-flash-preview')
+
+model = genai.GenerativeModel("gemini-3-flash-preview")
 
 SYSTEM_PROMPT = """تو یه دستیار هوش مصنوعی فارسی‌زبان هستی برای کانال AI Academy.
 همیشه به فارسی جواب بده مگه کاربر انگلیسی بنویسه.
 جواب‌هات کوتاه، مفید و کاربردی باشه."""
 
+MAIN_KEYBOARD = ReplyKeyboardMarkup(
+    [
+        ["🤖 چت با AI"],
+        ["✍️ ساخت پرامپت"],
+        ["📝 خلاصه‌سازی"],
+        ["💡 پیشنهاد موضوع"],
+        ["🏠 منوی اصلی"],
+    ],
+    resize_keyboard=True,
+)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🤖 چت با AI", callback_data="chat")],
-        [InlineKeyboardButton("✍️ ساخت پرامپت", callback_data="prompt")],
-        [InlineKeyboardButton("📝 خلاصه‌سازی", callback_data="summary")],
-        [InlineKeyboardButton("💡 پیشنهاد موضوع", callback_data="suggest")],
-    ]
+
+    context.user_data["mode"] = "chat"
+
     await update.message.reply_text(
-        "سلام! به AI Academy خوش اومدی 🎓\n\nچیکار میتونم برات انجام بدم؟",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        "🎓 به AI Academy خوش اومدی\n\nیکی از گزینه‌ها رو انتخاب کن:",
+        reply_markup=MAIN_KEYBOARD,
     )
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    context.user_data["mode"] = query.data
-    messages = {
-        "chat": "🤖 حالت چت فعاله! هر سوالی داری بپرس:",
-        "prompt": "✍️ موضوعی که میخوای پرامپتش رو بسازم بگو:",
-        "summary": "📝 متنی که میخوای خلاصه بشه رو بفرست:",
-        "suggest": "💡 پیشنهادت رو بنویس:"
-    }
-    await query.edit_message_text(messages.get(query.data, "بفرما:"))
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     user_message = update.message.text
+
+    if user_message == "🏠 منوی اصلی":
+
+        context.user_data["mode"] = "chat"
+
+        await update.message.reply_text(
+            "🏠 منوی اصلی\n\nیکی از گزینه‌ها رو انتخاب کن:",
+            reply_markup=MAIN_KEYBOARD,
+        )
+        return
+
+    elif user_message == "🤖 چت با AI":
+
+        context.user_data["mode"] = "chat"
+
+        await update.message.reply_text(
+            "🤖 سوالت رو بپرس:"
+        )
+        return
+
+    elif user_message == "✍️ ساخت پرامپت":
+
+        context.user_data["mode"] = "prompt"
+
+        await update.message.reply_text(
+            "✍️ موضوعی که میخوای پرامپتش رو بسازم بگو:"
+        )
+        return
+
+    elif user_message == "📝 خلاصه‌سازی":
+
+        context.user_data["mode"] = "summary"
+
+        await update.message.reply_text(
+            "📝 متنی که میخوای خلاصه بشه رو بفرست:"
+        )
+        return
+
+    elif user_message == "💡 پیشنهاد موضوع":
+
+        context.user_data["mode"] = "suggest"
+
+        await update.message.reply_text(
+            "💡 پیشنهادت رو بنویس:"
+        )
+        return
+
     mode = context.user_data.get("mode", "chat")
 
     if mode == "suggest":
+
         if ADMIN_ID:
+
+            username = (
+                update.effective_user.username
+                if update.effective_user.username
+                else "بدون_یوزرنیم"
+            )
+
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"💡 پیشنهاد از @{update.message.from_user.username}:\n\n{user_message}"
+                text=f"💡 پیشنهاد جدید\n\n@{username}\n\n{user_message}",
             )
-        await update.message.reply_text("✅ پیشنهادت ثبت شد! ممنون 🙏")
+
+        await update.message.reply_text(
+            "✅ پیشنهادت ثبت شد. ممنون 🙏"
+        )
         return
 
     prompts = {
-        "prompt": f"{SYSTEM_PROMPT}\n\nیه پرامپت حرفه‌ای بساز برای: {user_message}",
-        "summary": f"{SYSTEM_PROMPT}\n\nاین متن رو خلاصه کن:\n{user_message}",
-        "chat": f"{SYSTEM_PROMPT}\n\nسوال: {user_message}"
+        "chat":
+            f"{SYSTEM_PROMPT}\n\nسوال:\n{user_message}",
+
+        "summary":
+            f"{SYSTEM_PROMPT}\n\nاین متن رو خلاصه کن:\n{user_message}",
+
+        "prompt":
+            f"{SYSTEM_PROMPT}\n\nیه پرامپت حرفه‌ای بساز برای:\n{user_message}",
     }
 
-    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
-
     try:
-        response = model.generate_content(prompts.get(mode, prompts["chat"]))
-        await update.message.reply_text(response.text)
+
+        await context.bot.send_chat_action(
+            chat_id=update.effective_chat.id,
+            action="typing"
+        )
+
+        response = model.generate_content(
+            prompts.get(mode, prompts["chat"])
+        )
+
+        result = response.text
+
+        try:
+
+            await update.message.reply_text(
+                result,
+                parse_mode=ParseMode.MARKDOWN
+            )
+
+        except:
+
+            await update.message.reply_text(
+                result
+            )
+
     except Exception as e:
+
         logging.error(f"Gemini error: {e}")
-        await update.message.reply_text("❌ مشکلی پیش اومد، دوباره امتحان کن!")
+
+        await update.message.reply_text(
+            "❌ مشکلی پیش اومد، دوباره امتحان کن!"
+        )
+
 
 def main():
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    app = Application.builder().token(
+        TELEGRAM_TOKEN
+    ).build()
+
+    app.add_handler(
+        CommandHandler("start", start)
+    )
+
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            handle_message
+        )
+    )
+
     print("✅ بات شروع به کار کرد!")
-    app.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
+
+    app.run_polling(
+        drop_pending_updates=True
+    )
+
 
 if __name__ == "__main__":
     main()
