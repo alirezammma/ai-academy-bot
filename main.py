@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 import google.generativeai as genai
 
@@ -143,17 +144,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         result = response.text
 
-        try:
+        if mode == "prompt":
+
+            safe_result = (
+                result.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+            )
+
+            await update.message.reply_text(
+                f"<pre>{safe_result}</pre>",
+                parse_mode=ParseMode.HTML
+            )
+
+        else:
+
+            result = re.sub(
+                r"\*\*(.*?)\*\*",
+                r"<b>\1</b>",
+                result
+            )
 
             await update.message.reply_text(
                 result,
-                parse_mode=ParseMode.MARKDOWN
-            )
-
-        except:
-
-            await update.message.reply_text(
-                result
+                parse_mode=ParseMode.HTML
             )
 
     except Exception as e:
