@@ -96,8 +96,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif user_message == "📰 AI News":
-        await update.message.reply_text(f"📰 آخرین اخبار AI:\n\n{latest_news['text']}")
-        return
+    await update.message.reply_text(
+        f"📰 آخرین اخبار AI:\n\n{latest_news['text']}",
+        parse_mode=ParseMode.HTML
+    )
+    return
 
     elif user_message == "💡 پیشنهاد موضوع":
         context.user_data["mode"] = "suggest"
