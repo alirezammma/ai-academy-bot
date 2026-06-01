@@ -96,11 +96,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif user_message == "📰 AI News":
-    await update.message.reply_text(
-        f"📰 آخرین اخبار AI:\n\n{latest_news['text']}",
-        parse_mode=ParseMode.HTML
-    )
-    return
+        await update.message.reply_text(
+            f"📰 آخرین اخبار AI:\n\n{latest_news['text']}",
+            parse_mode=ParseMode.HTML
+        )
+        return
 
     elif user_message == "💡 پیشنهاد موضوع":
         context.user_data["mode"] = "suggest"
@@ -140,7 +140,10 @@ PROMPT_END
     }
 
     try:
-        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+        await context.bot.send_chat_action(
+            chat_id=update.effective_chat.id,
+            action="typing"
+        )
         response = model.generate_content(prompts.get(mode, prompts["chat"]))
         result = response.text
         result = re.sub(r"###\s*(.*)", r"<b>\1</b>", result)
@@ -151,9 +154,17 @@ PROMPT_END
             match = re.search(r"PROMPT_START(.*?)PROMPT_END", result, re.DOTALL)
             if match:
                 prompt_text = match.group(1).strip()
-                normal_text = re.sub(r"PROMPT_START.*?PROMPT_END", "", result, flags=re.DOTALL).strip()
-                final_message = normal_text + "\n\n<b>📋 پرامپت نهایی:</b>\n\n" + f"<pre>{html.escape(prompt_text)}</pre>"
-                await update.message.reply_text(final_message, parse_mode=ParseMode.HTML)
+                normal_text = re.sub(
+                    r"PROMPT_START.*?PROMPT_END", "", result, flags=re.DOTALL
+                ).strip()
+                final_message = (
+                    normal_text
+                    + "\n\n<b>📋 پرامپت نهایی:</b>\n\n"
+                    + f"<pre>{html.escape(prompt_text)}</pre>"
+                )
+                await update.message.reply_text(
+                    final_message, parse_mode=ParseMode.HTML
+                )
             else:
                 await update.message.reply_text(result, parse_mode=ParseMode.HTML)
         else:
