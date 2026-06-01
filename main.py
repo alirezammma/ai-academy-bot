@@ -48,7 +48,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=MAIN_KEYBOARD,
     )
 
-
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_message = update.message.text
@@ -198,15 +197,14 @@ PROMPT_END
                     flags=re.DOTALL
                 ).strip()
 
-                if normal_text:
-
-                    await update.message.reply_text(
-                        normal_text,
-                        parse_mode=ParseMode.HTML
-                    )
+                final_message = (
+                    normal_text
+                    + "\n\n<b>📋 پرامپت نهایی:</b>\n\n"
+                    + f"<pre>{html.escape(prompt_text)}</pre>"
+                )
 
                 await update.message.reply_text(
-                    f"<pre>{html.escape(prompt_text)}</pre>",
+                    final_message,
                     parse_mode=ParseMode.HTML
                 )
 
@@ -232,7 +230,6 @@ PROMPT_END
             "❌ مشکلی پیش اومد، دوباره امتحان کن!"
         )
 
-
 def main():
 
     app = Application.builder().token(
@@ -255,7 +252,6 @@ def main():
     app.run_polling(
         drop_pending_updates=True
     )
-
 
 if __name__ == "__main__":
     main()
