@@ -260,7 +260,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         users_col.update_one({"user_id": user_id}, {"$set": {"mode": "chat"}})
         remaining = get_remaining(user, "chat")
         await update.message.reply_text(
-            f"🤖 بفرما، هر سوالی داری در خدمتم:\n\n💬 پیام‌های باقی‌مانده امروز: {remaining}"
+            f"🤖 بفرمایید، هر سوالی داری در خدمتم:\n\n💬 پیام‌های باقی‌مانده امروز: {remaining}"
         )
         return
 
