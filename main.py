@@ -210,7 +210,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id != str(ADMIN_ID):
         return
     if not context.args:
-        await update.message.reply_text("❌ مثال:\n/broadcast ربات آپدیت شد! برای استفاده روی منوی اصلی بزنید")
+        await update.message.reply_text("❌ مثال:\n/broadcast ربات آپدیت شد!")
         return
 
     text = " ".join(context.args)
@@ -232,9 +232,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
             fail += 1
 
     await update.message.reply_text(
-        f"✅ ارسال تموم شد!\n\n"
-        f"موفق: {success}\n"
-        f"ناموفق: {fail}"
+        f"✅ ارسال تموم شد!\n\nموفق: {success}\nناموفق: {fail}"
     )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -257,15 +255,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif user_message == "🤖 چت با AI":
-    users_col.update_one({"user_id": user_id}, {"$set": {"mode": "chat"}})
-    await update.message.reply_text("🤖 بفرمایید، هر سوالی داری در خدمتم:")
-    return
+        users_col.update_one({"user_id": user_id}, {"$set": {"mode": "chat"}})
+        await update.message.reply_text("🤖 بفرمایید، هر سوالی داری در خدمتم:")
+        return
 
     elif user_message == "✍️ ساخت پرامپت":
-    users_col.update_one({"user_id": user_id}, {"$set": {"mode": "prompt"}})
-    await update.message.reply_text("✍️ موضوعی که میخوای پرامپتش رو بسازم بگو:")
-    return
-    
+        users_col.update_one({"user_id": user_id}, {"$set": {"mode": "prompt"}})
+        await update.message.reply_text("✍️ موضوعی که میخوای پرامپتش رو بسازم بگو:")
+        return
+
     elif user_message == "📰 AI News":
         news_id = get_news_id()
         if news_id:
