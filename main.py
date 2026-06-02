@@ -257,21 +257,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif user_message == "🤖 چت با AI":
-        users_col.update_one({"user_id": user_id}, {"$set": {"mode": "chat"}})
-        remaining = get_remaining(user, "chat")
-        await update.message.reply_text(
-            f"🤖 بفرمایید، هر سوالی داری در خدمتم:\n\n💬 پیام‌های باقی‌مانده امروز: {remaining}"
-        )
-        return
+    users_col.update_one({"user_id": user_id}, {"$set": {"mode": "chat"}})
+    await update.message.reply_text("🤖 بفرمایید، هر سوالی داری در خدمتم:")
+    return
 
     elif user_message == "✍️ ساخت پرامپت":
-        users_col.update_one({"user_id": user_id}, {"$set": {"mode": "prompt"}})
-        remaining = get_remaining(user, "prompt")
-        await update.message.reply_text(
-            f"✍️ موضوعی که میخوای پرامپتش رو بسازم بگو:\n\n🎯 پرامپت‌های باقی‌مانده امروز: {remaining}"
-        )
-        return
-
+    users_col.update_one({"user_id": user_id}, {"$set": {"mode": "prompt"}})
+    await update.message.reply_text("✍️ موضوعی که میخوای پرامپتش رو بسازم بگو:")
+    return
+    
     elif user_message == "📰 AI News":
         news_id = get_news_id()
         if news_id:
