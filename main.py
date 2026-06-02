@@ -26,7 +26,6 @@ PRIVATE_CHANNEL_ID = os.environ.get("PRIVATE_CHANNEL_ID")
 MONGODB_URI = os.environ.get("MONGODB_URI")
 CHANNEL_USERNAME = "@AiAcademyLearning"
 
-# MongoDB
 client = MongoClient(MONGODB_URI)
 db = client["ai_academy"]
 users_col = db["users"]
@@ -35,11 +34,11 @@ news_col = db["news"]
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-3.1-flash-lite")
 
-SYSTEM_PROMPT = """تو یه دستیار هوش مصنوعی فارسی‌زبان هستی برای کانال AI Academy.
+SYSTEM_PROMPT = """تو یه دستیار هوش مصنوعی فارسی‌زبان هستی برای بات AI Academy.
 همیشه به فارسی جواب بده مگه کاربر انگلیسی بنویسه.
 جواب‌هات کوتاه، مفید و کاربردی باشه."""
 
-CHAT_LIMIT = 7
+CHAT_LIMIT = 10
 PROMPT_LIMIT = 3
 
 MAIN_KEYBOARD = ReplyKeyboardMarkup(
@@ -170,7 +169,7 @@ async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     await query.answer()
 
     if await is_member(context.bot, user_id):
-        await query.edit_message_text("✅ عضویت تأیید شد! خوش اومدی 🎓")
+        await query.edit_message_text("✅ عضویت تأیید شد!\n\n🎓 به AI Academy خوش آمدید")
         get_user(user_id)
 
         pending = context.user_data.get("pending_post")
@@ -206,6 +205,38 @@ async def set_news_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     set_news_id_db(msg_id)
     await update.message.reply_text(f"✅ AI News آپدیت شد! ID: {msg_id}")
 
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if user_id != str(ADMIN_ID):
+        return
+    if not context.args:
+        await update.message.reply_text("❌ مثال:\n/broadcast ربات آپدیت شد! برای استفاده روی منوی اصلی بزنید")
+        return
+
+    text = " ".join(context.args)
+    all_users = users_col.find({}, {"user_id": 1})
+    success = 0
+    fail = 0
+
+    await update.message.reply_text("⏳ در حال ارسال...")
+
+    for u in all_users:
+        try:
+            await context.bot.send_message(
+                chat_id=u["user_id"],
+                text=text,
+                reply_markup=MAIN_KEYBOARD
+            )
+            success += 1
+        except:
+            fail += 1
+
+    await update.message.reply_text(
+        f"✅ ارسال تموم شد!\n\n"
+        f"موفق: {success}\n"
+        f"ناموفق: {fail}"
+    )
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_message = update.message.text
@@ -228,13 +259,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif user_message == "🤖 چت با AI":
         users_col.update_one({"user_id": user_id}, {"$set": {"mode": "chat"}})
         remaining = get_remaining(user, "chat")
-        await update.message.reply_text(f"🤖 سوالت رو بپرس:\n\n💬 پیام‌های باقی‌مانده امروز: {remaining}")
+        await update.message.reply_text(
+            f"🤖 بفرما، هر سوالی داری در خدمتم:\n\n💬 پیام‌های باقی‌مانده امروز: {remaining}"
+        )
         return
 
     elif user_message == "✍️ ساخت پرامپت":
         users_col.update_one({"user_id": user_id}, {"$set": {"mode": "prompt"}})
         remaining = get_remaining(user, "prompt")
-        await update.message.reply_text(f"✍️ موضوعی که میخوای پرامپتش رو بسازم بگو:\n\n🎯 پرامپت‌های باقی‌مانده امروز: {remaining}")
+        await update.message.reply_text(
+            f"✍️ موضوعی که میخوای پرامپتش رو بسازم بگو:\n\n🎯 پرامپت‌های باقی‌مانده امروز: {remaining}"
+        )
         return
 
     elif user_message == "📰 AI News":
@@ -357,6 +392,7 @@ def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("setnewsid", set_news_id))
+    app.add_handler(CommandHandler("broadcast", broadcast))
     app.add_handler(CallbackQueryHandler(check_join_callback, pattern="check_join"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     print("✅ بات شروع به کار کرد!")
