@@ -371,8 +371,8 @@ PROMPT_END
             add_to_history(user_id, "prompt", "model", result)
 
         else:
-            result += f"\n\n💬 پیام‌های باقی‌مانده: {remaining}"
-            await update.message.reply_text(result, parse_mode=ParseMode.HTML)
+            display_result = result + f"\n\n💬 پیام‌های باقی‌مانده: {remaining}"
+            await update.message.reply_text(display_result, parse_mode=ParseMode.HTML)
             add_to_history(user_id, "chat", "user", user_message)
             add_to_history(user_id, "chat", "model", result)
 
