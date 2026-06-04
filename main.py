@@ -146,12 +146,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if args:
         post_id = args[0]
         try:
-            message_id = int(post_id.replace("post_", ""))
-            await context.bot.copy_message(
-                chat_id=update.effective_chat.id,
-                from_chat_id=PRIVATE_CHANNEL_ID,
-                message_id=message_id
-            )
+            parts = post_id.replace("post_", "").split("_")
+            for part in parts:
+                await context.bot.copy_message(
+                    chat_id=update.effective_chat.id,
+                    from_chat_id=PRIVATE_CHANNEL_ID,
+                    message_id=int(part)
+                )
             return
         except Exception as e:
             logging.error(f"Post error: {e}")
